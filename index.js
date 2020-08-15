@@ -1,16 +1,18 @@
 const express = require('express')
 const morgan = require('morgan')
 const { request, response } = require('express')
+require('dotenv').config()
+const PhoneBook = require('./models/person')
 const app = express()
 const cors = require('cors')
 app.use(cors())
 app.use(express.json())
-app.use(morgan('tiny'))
-morgan.token('body', function (req, res) { return JSON.stringify(req.body) });
-app.use(morgan(':method :url :status :res[content-length] - :response-time ms :body'));
+// app.use(morgan('tiny'))
+// morgan.token('body', function (request, response) { return JSON.stringify(request.body) });
+// app.use(morgan(':method :url :status :response[content-length] - :response-time ms :body'));
 
 
-// const requestLogger = (req, res, next) => {
+// const requestLogger = (req, response, next) => {
 //     console.log('Method:', req.method)
 //     console.log('Path:  ', req.path)
 //     console.log('Body:  ', req.body)
@@ -18,8 +20,8 @@ app.use(morgan(':method :url :status :res[content-length] - :response-time ms :b
 //     next()
 //   }
   
-//   const unknownEndpoint = (req, res) => {
-//     res.status(404).send({ error: 'unknown endpoint' })
+//   const unknownEndpoint = (req, response) => {
+//     response.status(404).send({ error: 'unknown endpoint' })
 //   }
 
 //   app.use(requestLogger)
@@ -47,84 +49,64 @@ let persons = [
     }
   ]
 
-
   //Get
-  app.get('/api/persons', (req, res) => {
-      return res.send(persons)
+  app.get('/api/phonebooks', (request, response) => {
+     PhoneBook.find({}).then(phonebooks => {
+         response.json(phonebooks.map(phonebook => phonebook.toJSON()))
+     })
   })
 
 //Get information about single id
-app.get('/api/persons/:id', (req, res) => {
-    const id = Number(req.params.id)
-    const person = persons.find(person => person.id === id)
-
-    if(person) {
-        res.json(person)
-    }
-    else {
-        res.status(404).send('Requested resource not found')
-    }
+app.get('/api/phonebooks/:id', (request, response) => {
+Person.findById(request.params.id).then(phonebook =>{
+    response.json(phonebook.toJSON())
+})
 })
 
 //Info
-const len = persons.length
-var d = new Date("2020-08-13");
+// const len = phonebook.length
+// var d = new Date("2020-08-13");
 
-app.get('/info', (req, res) => {
-    return res.send(`<strong>Phonebook has info for ${len} people <br /> <br /> ${d}</strong>`)
-})
+// app.get('/info', (request, response) => {
+//     return response.send(`<strong>Phonebook has info for ${len} people <br /> <br /> ${d}</strong>`)
+// })
 
 //Post
 const generateId = () => {
-    const maxId = persons.length > 0 ? Math.floor(Math.random() * 1000) : 0
+    const maxId = phonebook.length > 0 ? Math.floor(Math.random() * 1000) : 0
     return maxId;
 }
 
-app.post('/api/persons', (req, res) => {
-    const body = req.body;
+app.post('/api/phonebooks', (request, response) => {
+    const body = request.body;
     //check for missing name and number
-    if(!body.name || !body.number) {
-        return res.status(400).json(
+    if(body.name === undefined) {
+        return response.status(400).json(
             {
-                error: 'Either Name or Number is missing'
+                error: 'name-missing'
             }
         )
     }
-    //Error handling for the hardcoded list of object
-    for (let i = 0; i < persons.length; i++) {
-        if(persons[i].name === req.body.name) {
-            return res.status(409).json(
-                {
-                    error: 'Name must be unique'
-                }
-            )
-        }
-    }
-
-    const person = {
-        id: generateId(),
+    const phonebooks  = new PhoneBook({
         name: body.name,
-        number: body.number
-    }
-
-    persons.concat(person)
-
-    res.json(person)
+        phone: body.phone
+    })
+    phonebooks.save().then(phonebook => {
+        response.json(phonebook.toJSON())
+    })
 })
 
 //Delete
-app.delete('/api/persons/:id', (req, res) => {
-    const id = Number(req.params.id)
-    const person = persons.filter(person => person.id === id)
-    res.status(204).end()
+app.delete('/api phonebook/:id', (request, response) => {
+    const id = Number(request.params.id)
+    const phonebook = phonebook.filter(person => person.id !== id)
+    response.status(204).end()
 })
 
 //morgan('tiny')
 // app.use(unknownEndpoint)
 
-const PORT = process.env.PORT || 3001
+const PORT = process.env.PORT 
 app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
 })
-
-
