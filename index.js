@@ -49,21 +49,19 @@ let persons = [
     }
   ]
 
-  //Get
-  app.get('/api/phonebooks', (request, response) => {
-     PhoneBook.find({}).then(phonebooks => {
-         response.json(phonebooks.map(phonebook => phonebook.toJSON()))
-     })
-  })
-
 //Get information about single id
 app.get('/api/phonebooks/:id', (request, response) => {
-Person.findById(request.params.id).then(phonebook =>{
+PhoneBook.findById(request.params.id).then(phonebook =>{
     response.json(phonebook.toJSON())
 })
 })
 
 //Info
+app.get('/api/phonebooks', (request, response) => {
+    PhoneBook.find({}).then(persons => {
+        response.json(persons.map(person => person.toJSON()))
+    })
+})
 // const len = phonebook.length
 // var d = new Date("2020-08-13");
 
@@ -72,10 +70,10 @@ Person.findById(request.params.id).then(phonebook =>{
 // })
 
 //Post
-const generateId = () => {
-    const maxId = phonebook.length > 0 ? Math.floor(Math.random() * 1000) : 0
-    return maxId;
-}
+// const generateId = () => {
+//     const maxId = phonebook.length > 0 ? Math.floor(Math.random() * 1000) : 0
+//     return maxId;
+// }
 
 app.post('/api/phonebooks', (request, response) => {
     const body = request.body;
@@ -96,15 +94,47 @@ app.post('/api/phonebooks', (request, response) => {
     })
 })
 
+//Put//update
+app.put('/api/phonebooks/:id', (request, response, next) => {
+    const body = request.body
+    const phonebook = {
+        name: body.name,
+        phone: body.phone
+    }
+    PhoneBook.findByIdAndUpdate(request.params.id, phonebook, {new: true})
+    .then(updatedPhonebook => {
+        response.json(updatedPhonebook.toJSON())
+    })
+    .catch(error => next(error))
+})
+
 //Delete
-app.delete('/api phonebook/:id', (request, response) => {
-    const id = Number(request.params.id)
-    const phonebook = phonebook.filter(person => person.id !== id)
-    response.status(204).end()
+app.delete('/api/phonebooks/:id', (request, response) => {
+    PhoneBook.findByIdAndRemove(request.params.id)
+ .then(result => {
+     response.status(204).end()
+ })
+ .catch(error => next(error))
 })
 
 //morgan('tiny')
-// app.use(unknownEndpoint)
+
+const unknownEndpoint = (request, response) => {
+    response.status(404).send({error: 'unknown endpoint'})
+}
+
+app.use(unknownEndpoint)
+
+//Error Handling
+const errorHandler = (error, request, response, next) => {
+    console.error(error.message)
+
+    if(error.name === 'CastError' && error.kind == 'ObjectId') {
+        return response.status(400).send({error: 'malformed id'})
+    }
+    return next(error)
+}
+app.use(errorHandler)
 
 const PORT = process.env.PORT 
 app.listen(PORT, () => {

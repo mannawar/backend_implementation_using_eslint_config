@@ -1,0 +1,7 @@
+PUT http://localhost:3001/api/phonebooks/5f39e5cbaa9a1a13389daf71
+Content-Type: application/json
+
+{
+    "name": "Shaad",
+    "phone": "55687808"
+}
