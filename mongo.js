@@ -43,7 +43,7 @@ const phonebook = new Phonebook({
   phone: "39-23-5323523"
 })
 
-  phoneBook.save().then(result => {
+  PhoneBook.save().then(result => {
     console.log('note saved!')
     mongoose.connection.close()
   })
